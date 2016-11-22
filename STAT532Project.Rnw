@@ -1,0 +1,33 @@
+\documentclass[titlepage]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{fullpage}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{titlesec}
+\pagestyle{fancy}
+\lhead{Jacob Dym, Justin Gomez, Paul Harmon}
+\chead{STAT 536, HW 5}
+\rhead{10/6/2016}
+\setlength{\headheight}{20pt}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.2pt}
+\setlength{\parindent}{0pt}
+\begin{document}
+
+<<setup, include=FALSE, cache=FALSE>>=
+library(knitr)
+# set global chunk options
+opts_chunk$set(echo=TRUE,results='markup',message=FALSE, comment=NA,warning=FALSE,tidy=TRUE,fig.width=6,fig.height=3.85)
+@
+
+<<>>=
+cancer<-read.csv("ftp://ftp.ics.uci.edu/pub/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data",header=FALSE)
+write.csv(read.csv("ftp://ftp.ics.uci.edu/pub/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data",header=FALSE),"didthiswork.csv")
+write.csv(cancer,"breast-cancer-wisconsin.csv")
+View(cancer)
+@
+
+\end{document}
