@@ -24,9 +24,8 @@ opts_chunk$set(echo=TRUE,results='markup',message=FALSE, comment=NA,warning=FALS
 @
 
 <<>>=
-cancer<-read.csv("ftp://ftp.ics.uci.edu/pub/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data",header=FALSE)
-write.csv(read.csv("ftp://ftp.ics.uci.edu/pub/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data",header=FALSE),"didthiswork.csv")
-write.csv(cancer,"breast-cancer-wisconsin.csv")
+#write.csv(read.csv("ftp://ftp.ics.uci.edu/pub/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data",header=FALSE),"breast-cancer-wisconsin.csv")
+cancer<-read.csv("breast-cancer-wisconsin.csv")[,-1]
 View(cancer)
 @
 
