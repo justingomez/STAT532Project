@@ -8,9 +8,9 @@
 \usepackage{setspace}
 \usepackage{titlesec}
 \pagestyle{fancy}
-\lhead{Jacob Dym, Justin Gomez, Paul Harmon}
-\chead{STAT 536, HW 5}
-\rhead{10/6/2016}
+\lhead{Justin Gomez}
+\chead{STAT 532 Project}
+\rhead{12/2016}
 \setlength{\headheight}{20pt}
 \renewcommand{\headrulewidth}{0.2pt}
 \renewcommand{\footrulewidth}{0.2pt}
@@ -23,10 +23,73 @@ library(knitr)
 opts_chunk$set(echo=TRUE,results='markup',message=FALSE, comment=NA,warning=FALSE,tidy=TRUE,fig.width=6,fig.height=3.85)
 @
 
+replicatin of figure 3
+<<>>=
+alpha<-.95
+beta<-.5
+num.sims<-5
+deta<-0
+b<-rep(12,num.sims)
+for(i in 1:num.sims) {
+  p<-alpha*(1-deta)^(-beta)
+  b[i]<-rbinom(1,1,p)
+  if (b[i]==1) deta<-deta+1
+}
+@
+
+Simulation
+<<>>=
+num.sims<-200
+eps<-rnorm(num.sims,0,1)
+Discretesample1<-function(n) { 
+    sample(x=seq(1,10,1),size=n,replace=TRUE,prob=rep(.1,10)) 
+}
+Discretesample2<-function(n) { 
+    sample(x=c("A","B","C","D"),size=n,replace=TRUE,prob=rep(.25,4)) 
+}
+set.seed(41493)
+x1<-Discretesample1(num.sims)
+counts(x1)
+x2<-as.factor(Discretesample2(num.sims))
+library(plyr)
+count(x2)
+fx <- ifelse(x1<=5.0 & x2=="A"|x2=="B", 8.0,
+      ifelse(x1>5.0 & x2=="A"|x2=="B",  2.0,
+      ifelse(x1<=3.0 & x2=="C"|x2=="D", 1.0,
+      ifelse(3.0<x1 & x1<=7.0 & x2=="C"|x2=="D", 5.0,
+      ifelse(x1>7.0 & x2=="C"|x2=="D", 8.0, NA)))))
+y<-fx+2*eps
+plot(y~x1)
+boxplot(y~x2, xlab = "X2", ylab = "Y", border = "white")
+points(y~x2,pch=1)
+
+alpha<-.95
+beta<-1
+deta<-uniform
+psplit<-alpha*(1+deta)^(-beta)
+@
+
+
+Breast Cancer Data
 <<>>=
 #write.csv(read.csv("ftp://ftp.ics.uci.edu/pub/machine-learning-databases/breast-cancer-wisconsin/breast-cancer-wisconsin.data",header=FALSE),"breast-cancer-wisconsin.csv")
 cancer<-read.csv("breast-cancer-wisconsin.csv")[,-1]
-View(cancer)
+colnames(cancer)<-c("id","size","clump","shape","adhes","secs","bare","bland","normal","mitoses","class")
+cancer$bare<-as.numeric(cancer$bare)
+cancer$class<-as.factor(cancer$class)
+cancer[!complete.cases(cancer),]
+#examine corr structure
+library(psych)
+pairs.panels(cancer[,-c(1,11)])
+library(corrplot)
+M<-cor(cancer[,-c(1,11)])
+corrplot.mixed(M,upper="ellipse")
+#tenfold cross validation
+library(caret)
+y<-cancer$class
+flds<-createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
+names(flds)[1] <- "train"
+
 @
 
 \end{document}
