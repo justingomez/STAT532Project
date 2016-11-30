@@ -39,19 +39,20 @@ for(i in 1:num.sims) {
 
 Simulation
 <<>>=
-num.sims<-200
+library(plyr)
+library(LearnBayes)
+num.sims<-1000
 eps<-rnorm(num.sims,0,1)
-Discretesample1<-function(n) { 
-    sample(x=seq(1,10,1),size=n,replace=TRUE,prob=rep(.1,10)) 
+Discretesample1<-function(n,m) { 
+    sample(x=m,size=n,replace=TRUE) 
 }
-Discretesample2<-function(n) { 
-    sample(x=c("A","B","C","D"),size=n,replace=TRUE,prob=rep(.25,4)) 
+Discretesample2<-function(n,m) { 
+    sample(x=m,size=n,replace=TRUE) 
 }
 set.seed(41493)
-x1<-Discretesample1(num.sims)
-counts(x1)
-x2<-as.factor(Discretesample2(num.sims))
-library(plyr)
+x1<-Discretesample1(num.sims,seq(1,10,1))
+count(x1)
+x2<-as.factor(Discretesample2(num.sims,c("A","B","C","D")))
 count(x2)
 fx <- ifelse(x1<=5.0 & x2=="A"|x2=="B", 8.0,
       ifelse(x1>5.0 & x2=="A"|x2=="B",  2.0,
@@ -63,12 +64,49 @@ plot(y~x1)
 boxplot(y~x2, xlab = "X2", ylab = "Y", border = "white")
 points(y~x2,pch=1)
 
-alpha<-.95
-beta<-1
-deta<-uniform
-psplit<-alpha*(1+deta)^(-beta)
-@
+sim<-as.data.frame(cbind(y,x1,x2))
 
+#simple case
+enough<-10
+alpha<-.5
+mu<-mean(y)
+nu<-10
+lambda<-4
+eta<-matrix(NA,nrow=50,ncol=2)
+eta[1,1]<-1
+poss.x1<-m<-seq(2,8,1)
+poss.x2<-n<-c("A,B","C,D")
+#grow
+rho<-NULL
+node<-NULL
+w<-0
+b<-NULL
+
+for(i in 1:enough) {
+  if(runif(1)<alpha) {
+    node[i]<-sample(which(is.na(eta[,1])==FALSE & is.na(eta[,2])),1)
+    eta[which(is.na(eta[,1]))[1],1]<-which(is.na(eta[,1]))[1]
+    eta[which(is.na(eta[,1]))[1],1]<-which(is.na(eta[,1]))[1]
+    c<-sample(c(2,3),1,prob=c(.5,.5))
+    if(c==3 & w==0) rho[i]<-Discretesample2(1,n)
+    if(c==3 & w==1) c<-2
+    if(c==3) w<-1
+    if(c==2 & w==1) rho[i]<-Discretesample1(1,m)
+    if(c==2 & w==0) rho[i]<-Discretesample1(1,m)
+    eta[node[i],2]<-rho[i]
+    if(eta[node[i],2]=="A,B"|eta[node[i],2]=="C,D") w<-1
+    if(c==2) m<-subset(m,m!=rho[i])
+  }
+  #b[i]<-sum(!is.na(eta[,1]) & !is.na(eta[,2]))
+  #if(!is.na(eta[10,1])) i<-enough+1
+}
+eta
+rho
+node
+#prune
+prune<-sample(which(!is.na(eta[,2])),1)
+
+@
 
 Breast Cancer Data
 <<>>=
