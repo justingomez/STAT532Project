@@ -66,7 +66,7 @@ n<-c("A,B","C,D")
 #grow
 rho<-NULL
 node<-NULL
-set.seed(4)
+set.seed(2)
 for(i in 1:num.sims) {
   if(runif(1)<alpha){
     node[i]<-sample(which(!is.na(eta[,1]) & is.na(eta[,2]) & is.na(eta[,4])),1) #node to split
@@ -110,18 +110,36 @@ for(i in 1:num.sims) {
 eta
 rho
 node
+
 #prune
-prune<-as.numeric(sample(which(!is.na(eta[,2])),1))
-kill<-which(as.numeric(eta[,3])==prune)
-if(is.na(eta[kill[1],2])) also<-which(is.na(eta[kill[1],3]))
-if(is.na(eta[kill[2],2])) also<-which(is.na(eta[kill[2],3]))
-eta[kill,c(2:4)]<-NA
+k<-matrix(NA,ncol=num.sims,nrow=50)
+set.seed(1)
+i=1
+prune<-sample(which(!is.na(eta[,2]))[-1],1)
+k[i,1]<-prune
+l<-1
+j<-2
+while(!is.na(eta[k[i,l],2])) {
+  l<-l+1
+  k[i,l]<-which(as.numeric(eta[,3])==k[i,l-1])[1]
+  l<-l+1
+  k[i,l]<-which(as.numeric(eta[,3])==k[i,l-2])[2]
+  j<-l+1
+}
+k[i,j]<-prune
+while(!is.na(eta[k[i,j],2])) {
+  j<-j+1
+  k[i,j]<-which(as.numeric(eta[,3])==k[i,j-1])[1]
+  j<-j+1
+  k[i,j]<-which(as.numeric(eta[,3])==k[i,j-1])[1]
+  j<-j+1
+  k[i,j]<-which(as.numeric(eta[,3])==k[i,j-2])[2]
+}
+eta[c(k[i,])[-1],]<-NA
+eta
+head(k)
 @
 
-another try
-<<>>=
-
-@
 
 Breast Cancer Data
 <<>>=
@@ -142,7 +160,6 @@ library(caret)
 y<-cancer$class
 flds<-createFolds(y, k = 10, list = TRUE, returnTrain = FALSE)
 names(flds)[1] <- "train"
-
 @
 
 \end{document}
