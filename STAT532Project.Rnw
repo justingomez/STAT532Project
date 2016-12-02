@@ -23,19 +23,6 @@ library(knitr)
 opts_chunk$set(echo=TRUE,results='markup',message=FALSE, comment=NA,warning=FALSE,tidy=TRUE,fig.width=6,fig.height=3.85)
 @
 
-replicatin of figure 3
-<<>>=
-alpha<-.95
-beta<-.5
-num.sims<-5
-deta<-0
-b<-rep(12,num.sims)
-for(i in 1:num.sims) {
-  p<-alpha*(1-deta)^(-beta)
-  b[i]<-rbinom(1,1,p)
-  if (b[i]==1) deta<-deta+1
-}
-@
 
 Simulation
 <<>>=
@@ -67,44 +54,72 @@ points(y~x2,pch=1)
 sim<-as.data.frame(cbind(y,x1,x2))
 
 #simple case
-enough<-10
+num.sims<-10
 alpha<-.5
 mu<-mean(y)
 nu<-10
 lambda<-4
-eta<-matrix(NA,nrow=50,ncol=2)
+eta<-matrix(NA,nrow=50,ncol=4)
 eta[1,1]<-1
-poss.x1<-m<-seq(2,8,1)
-poss.x2<-n<-c("A,B","C,D")
+m<-seq(min(x1)+1,max(x1)-1,1)
+n<-c("A,B","C,D")
 #grow
 rho<-NULL
 node<-NULL
-w<-0
-b<-NULL
-
-for(i in 1:enough) {
-  if(runif(1)<alpha) {
-    node[i]<-sample(which(is.na(eta[,1])==FALSE & is.na(eta[,2])),1)
-    eta[which(is.na(eta[,1]))[1],1]<-which(is.na(eta[,1]))[1]
-    eta[which(is.na(eta[,1]))[1],1]<-which(is.na(eta[,1]))[1]
-    c<-sample(c(2,3),1,prob=c(.5,.5))
-    if(c==3 & w==0) rho[i]<-Discretesample2(1,n)
-    if(c==3 & w==1) c<-2
-    if(c==3) w<-1
-    if(c==2 & w==1) rho[i]<-Discretesample1(1,m)
-    if(c==2 & w==0) rho[i]<-Discretesample1(1,m)
-    eta[node[i],2]<-rho[i]
-    if(eta[node[i],2]=="A,B"|eta[node[i],2]=="C,D") w<-1
-    if(c==2) m<-subset(m,m!=rho[i])
+set.seed(4)
+for(i in 1:num.sims) {
+  if(runif(1)<alpha){
+    node[i]<-sample(which(!is.na(eta[,1]) & is.na(eta[,2]) & is.na(eta[,4])),1) #node to split
+    eta[which(is.na(eta[,1]))[1],3]<-node[i] #assign parent
+    eta[which(is.na(eta[,1]))[1],1]<-which(is.na(eta[,1]))[1] #initiallize node (left)
+    eta[which(is.na(eta[,1]))[1],3]<-node[i] #assign parent
+    eta[which(is.na(eta[,1]))[1],1]<-which(is.na(eta[,1]))[1] #initiallize node (right)
+    if(is.na(eta[1,2])) {
+      rho[i]<-Discretesample2(1,n)
+      eta[node[i],2]<-rho[i]
+    }
+    if(node[i]==2 | node[i]==3) {
+      rho[i]<-Discretesample1(1,m)
+      eta[node[i],2]<-rho[i]
+    }
+    if(node[i]!=2 & node[i]!=3 & node[i]!=1) {
+      w<-as.numeric(eta[as.numeric(eta[node[i],3]),2])
+      rho[i]<-Discretesample1(1,m)
+      if(node[i]%%2==1) {
+        while(as.numeric(rho[i])<w) {
+          rho[i]<-Discretesample1(1,m)
+        }
+      }
+      if(node[i]%%2==0) {
+        while(as.numeric(rho[i])>=w) {
+          rho[i]<-Discretesample1(1,m)
+        }
+      }
+      eta[node[i],2]<-rho[i]
+    }
+    if(node[i]!=1) {
+      if(as.numeric(eta[node[i],2])==max(m)) {
+        eta[which(eta[,3]==node[i])[2],4]<-1
+      }
+      if(as.numeric(eta[node[i],2])==min(m)) {
+        eta[which(eta[,3]==node[i])[1],4]<-1
+      }
+    }
   }
-  #b[i]<-sum(!is.na(eta[,1]) & !is.na(eta[,2]))
-  #if(!is.na(eta[10,1])) i<-enough+1
 }
 eta
 rho
 node
 #prune
-prune<-sample(which(!is.na(eta[,2])),1)
+prune<-as.numeric(sample(which(!is.na(eta[,2])),1))
+kill<-which(as.numeric(eta[,3])==prune)
+if(is.na(eta[kill[1],2])) also<-which(is.na(eta[kill[1],3]))
+if(is.na(eta[kill[2],2])) also<-which(is.na(eta[kill[2],3]))
+eta[kill,c(2:4)]<-NA
+@
+
+another try
+<<>>=
 
 @
 
