@@ -10,7 +10,7 @@
 \pagestyle{fancy}
 \lhead{Justin Gomez}
 \chead{STAT 532 Project}
-\rhead{12/2016}
+\rhead{12/9/2016}
 \setlength{\headheight}{20pt}
 \renewcommand{\headrulewidth}{0.2pt}
 \renewcommand{\footrulewidth}{0.2pt}
@@ -27,10 +27,10 @@ opts_chunk$set(echo=TRUE,results='markup',message=FALSE, comment=NA,warning=FALS
 Statistical models are typically built to understand an underlying process (i.e. interpretation) or to gain information used to predict future observations. When the goal is prediction, it is often difficult to do better than classification and regression trees. These models thouroughly explore data in an attempt to summarize the information in a logical way, and more importantly, in a way that will allow us to make predictions. We will explore the general method for building these trees as we implement Bayesian methods to this common frequentist setting. This discussion will describe, in detail, the different priors that are applied in the model fitting process, as well as pointing out the several difficulties that one might encounter when attempting to excute this method.\\
 
 \section{Classical CART}
-We can begin the discussion of classification and regression trees with a general overview of how these trees are formed, as this will give us structure to refer to later. The type of tree that will be used is determined by the response variable of interest. If the response is categorical, a classification tree is grown, while a regression tree is grown for a quantitative response. Regardless of the type of tree, the method of formation is similar. Considering a suite of response variables $\textbf{X}={X_{1},...,X_{p}}$, we make recursive binary splits on the variables to partition the data into as homogeneous of groups as possible. For example, suppose we consider a split on a quantitative variable $X_{1}$ as our first split. We will assign a split rule $\rho_{1}$ to this variable that partitions the data into two sets, assigning observations to left and right children nodes based on their relationship to the split rule $\rho_{1}$ (for $x_{i} \leq \rho_{1}$ assign $x_{i}$ to the left node and assign the observation to the right node otherwise). If the variable is categorical we split the observations based on inclusion to a set. We call the partitions of the data set nodes; a node is an internal node if a split rule has been assigned to or it is a terminal node if it has not been assigned a split rule. Recall that the tree will stop growing once the observations within each terminal node are as homogeneous as possible, and we assign a summary parameter $\Theta={\theta_{1},...,\theta_{b}}$ to each of these terminal nodes. Figure 1 contains a classification tree that may be helpful to refer to. This tree model is for predicting whether a tumor in the breast is benign or malignant based on quantitative variables bare, size, clump, and shape. In the figure, the internal nodes are indicated with ovals and each has lines to the children nodes with the splitting rules on each line. Terminal nodes have been drawn with rectangles with the final prediction for tumors that fit the criteria that filter down to that node. This is a fairly general explanation for how CART models are created and used, but it is enough to continue into the Bayesian approach that Chipman et al. have proposed. More information can be found in Breiman's paper $\textit{Classification and Regression Trees}$ (1984).\\
+We can begin the discussion of classification and regression trees with a general overview of how these trees are formed, as this will give us structure to refer to later. The type of tree that will be used is determined by the response variable of interest. If the response is categorical, a classification tree is grown, while a regression tree is grown for a quantitative response. Regardless of the type of tree, the method of formation is similar. Considering a suite of response variables $\textbf{X}=\left\{X_{1},...,X_{p}\right\}$, we make recursive binary splits on the variables to partition the data into as homogeneous of groups as possible. For example, suppose we consider a split on a quantitative variable $X_{1}$ as our first split. We will assign a split rule $\rho_{1}$ to this variable that partitions the data into two sets, assigning observations to left and right children nodes based on their relationship to the split rule $\rho_{1}$ (for $x_{i} \leq \rho_{1}$ assign $x_{i}$ to the left node and assign the observation to the right node otherwise). If the variable is categorical we split the observations based on inclusion to a set. We call the partitions of the data set nodes; a node is an internal node if a split rule has been assigned to or it is a terminal node if it has not been assigned a split rule. Recall that the tree will stop growing once the observations within each terminal node are as homogeneous as possible, and we assign a summary parameter $\bf{\Theta}=\left\{\theta_{1},...,\theta_{b}\right\}$ to each of these terminal nodes. Figure 1 contains a classification tree that may be helpful to refer to. This tree model is for predicting whether a tumor in the breast is benign or malignant based on quantitative variables bare, size, clump, and shape. In the figure, the internal nodes are indicated with ovals and each has lines to the children nodes with the splitting rules on each line. Terminal nodes have been drawn with rectangles with the final prediction for tumors that fit the criteria that filter down to that node. This is a fairly general explanation for how CART models are created and used, but it is enough to continue into the Bayesian approach that Chipman et al. have proposed. More information can be found in Breiman's paper $\textit{Classification and Regression Trees}$ (1984).\\
 
 \section{Prior Specification}
-Applying the Bayesian method means that we need to specify parameters somewhere in this tree growing process. In the frequentist setting, CART models are rigid; if we pass the same data and split criterion to these model settings, we will always end up with the same exact tree. Chipman et al. propose the idea that a stochastic tree growing process is superior as we explore many more trees, and this can help us find the correct model for complicated processes. There are two parts of the model that we need to specify priors for: the trees $T$ and the parameters $\Theta$. It should be noted that most of this discussion will be framed in a regression tree framework, but it can be applied to classification trees as well by replacing split values with sets, and thinking about partitioning the data based on inclusion to different sets.\\
+Applying the Bayesian method means that we need to specify parameters somewhere in this tree growing process. In the frequentist setting, CART models are rigid; if we pass the same data and split criterion to these model settings, we will always end up with the same exact tree. Chipman et al. propose the idea that a stochastic tree growing process is superior as we explore many more trees, and this can help us find the correct model for complicated processes. There are two parts of the model that we need to specify priors for: the trees $\textit{T}$ and the parameters $\Theta$. It should be noted that most of this discussion will be framed in a regression tree framework, but it can be applied to classification trees as well by replacing split values with sets, and thinking about partitioning the data based on inclusion to different sets.\\
 
 \subsection{Tree Prior}
 The tree prior $p(T)$ is the part of the process that controlls growing the trees. This prior is slightly different from the priors we are used to specifying. Rather than saying the tree prior follows some known distribution explicitly, we will specify this parameter implicitly by defining the stochastic process used to generate each tree. To begin with, we start with a single node, that is, our dataset is not yet partitioned. We randomly split this node, assigning a split rule and creating two children nodes. From these two nodes, we can again look at splitting one of them randomly, and again randomly assigning a split rule, and continuing on randomly splitting on terminal nodes and assigning split rules appropriately. To guide the random splitting process, we specify a function $p_{SPLIT}(\eta,\T)$. For the specification of this function, something as simple as a constant probability of splitting on any given node $\eta$, or something as complicated as changing the probability of splitting based on the number of previous splits in the tree. If a node does split, then we need to assign a splitting rule to partition our observations, and again we will do this randomly using the function $p_{RULE}(\rho|\eta,T)$. There are several choices for the assignment of split rules. A common choice that works well is the uniform specification. This choice assumes that at each node, a split on any of the available predictors will be equally effective, and for every available predictor, any available split value will be equally effective as well. Split rules can thus be assigned by uniformly selecting from available predictors and then uniformly selecting from available split values. Another common choice, although one that shouldn't be used without good reason, is the alternative uniform specification which downweights predictors with fewer possible split values, while still selecting split rules on each predictor uniformly. Finally, there are many nonuniform specifications that could be used. These choices would include distributions that upweight/downweight predictors if there was good reason to, or even unequally weight the selection of split values. Once these functions have been chosen, the tree can be grown as described above. These steps have been summarized in the following algorithm, as summarized by the authors.\\
@@ -38,17 +38,52 @@ The tree prior $p(T)$ is the part of the process that controlls growing the tree
 \begin{center}
 \begin{enumerate}
 \item %1
-Begin by setting $T$ to be the trivial tree consisting of a single node denoted $\eta$.\\
+Begin by setting $\textit{T}$ to be the trivial tree consisting of a single node denoted $\eta$.\\
 \item %2
 Split the terminal node $\eta$ with probability $p_{SPLIT}(\eta,T)$.\\
 \item %3
 If the node splits, assign it a splitting rule $\rho$ according to the distribution $p_{RULE}(\rho|\eta,T)$, and create left and right children nodes.\\
 \item %4
-Let $T$ denote the newly created tree, and apply steps 2-4 with $\eta$ equal to the new left and right children.\\
+Let $\textit{T}$ denote the newly created tree, and apply steps 2-4 with $\eta$ equal to the new left and right children.\\
 \end{enumerate}
 \end{center}
 
 \subsection{Parameter Prior}
+As we have seen, each terminal node has an associated parameter $\theta_{b}$ that serves as the prediction for that node. This means that we need to apply priors to each terminal node. As always, we can use any priors we deem appropriate, but the authors note that there is already a great deal of work to do for this method, so the use of conjugate priors that yield an analytic posterior distribution is justified. The following equation shows the calculation necessary to obtain this posterior distribution.\\
+
+\begin{align}
+p(Y|X,T)=\int p(Y|X,\Theta,T)p(\Theta|T)d\Theta
+\end{align}
+
+This is a calculation that we are familiar with, and so, unsurprisingly, the prior distributions we will apply will be familiar as well. It is necessary to assume that the parameters are independent across terminal nodes. This is reasonable as the way that we defined the tree prior ensures that the order that the splits occurs does not depend on the order in which we consider making our splits. In the last section, the priors describes can be applied to either classification or regression trees. However, when we are specifying the parameter prior $p(\Theta|T)$, we need to consider both cases separately. Let's start with the regression setting.\\
+
+\subsubsection{Parameter Prior - Regression Tree}
+There are two sampling models of interest when considering regression trees: the mean shift model and the mean-variance shift model. The mean shift model, as we will see, allows the mean to change for each node and is specified in (2). The conjugate parameter priors that we can fit for this model are givin below that in (3) and (4).\\
+
+\begin{align}
+y_{i1},...,y_{in_{i}}|\theta_{i} &\stackrel{iid}{\sim} N(\mu_{i},\sigma^{2}), i=1,...,b\\
+\mu_{1},..,\mu_{b}|\sigma,T &\stackrel{iid}{\sim} N(\bar{\mu},\sigma^{2}/a)\\
+\sigma^2|T &\sim IG(\nu/2,\nu\lambda/2)
+\end{align}
+
+The mean-variance shift model allows both the mean and the variance to change for each node. This model is given in (5) and its priors are given in (6) and (7).\\
+
+\begin{align}
+y_{i1},...,y_{in_{i}}|\theta_{i} &\stackrel{iid}{\sim} N(\mu_{i},\sigma_{i}^{2}), i=1,...,b\\
+\mu_{i}|\sigma_{i} &\sim N(\bar{\mu},\sigma_{i}^{2}/a)\\
+\sigma_{i}^{2} &\sim IG(\nu/2,\nu\lambda/2)
+\end{align}
+
+In these distributions, the parameters $\nu,\lambda,\bar{\mu},a$ are determined by examining the collected observations. As mentioned, analytic solutions of $p(Y|X,T)$ for both combinations are available, and we will discuss the mean-variance shift one later.\\
+
+\subsubsection{Parameter Prior - Classification Tree}
+When dealing with a categorical response, there is one standard set of priors used for the parameters. Recall that in the classification setting, each $y_{ij}$ belongs to one of $\textit{K}$ categories $\textit{C_{1},...,C_{K}}$. Under the generalized Bernoulli model the standard Dirichlet distribution of dimension $\textit{K}-1$ with $\alpha=\left\{\alpha_{1},...,\alpha_{K}\right\}$ for $\alpha_{k}>0$.\\
+
+\begin{align}
+p_{1},...,p_{b} \stackrel{iid}{\sim} Dirichlet(p_{i}|\alpha)
+\end{align}
+
+Choices for $\alpha$ include a vector of one's, which yields the uniform distribution, or a variety of larger values that cause $p(Y|X,T)$ to become more sensitive to misclassification in certain categories.\\
 
 %Simulation
 <<>>=
@@ -81,7 +116,7 @@ points(y~x2,pch=1)
 
 sim<-as.data.frame(cbind(y,x1,x2))
 sim$x2<-as.factor(sim$x2)
-levels(sim$x2)<-c("A,B","C,D")
+#levels(sim$x2)<-c("A,B","C,D")
 @
 
 %putting in some bayes
@@ -111,7 +146,7 @@ for(j in 1:num.sims.tot) {
   #rpart.plot(T,type=3)
   
   T<-rpart(y~x1+x2,data=sim,method="anova",maxdepth=4)
-  rpart.plot(T,type=3)
+  #rpart.plot(T,type=3)
   n<-rep(12,length(T$frame$n[which(T$frame$var=="<leaf>")]))
   n<-T$frame$n[which(T$frame$var=="<leaf>")]
   s<-n-1
